@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-powered House Price Prediction Dashboard with Python, Flask, scikit-learn, and interactive visualizations." />
+  <title>House Price Predictor — Full-Stack ML Dashboard</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #34d399;
+      --accent-rose: #f43f5e;
+      --glass-bg: rgba(15, 23, 42, 0.65);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 20px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #6366f1, #38bdf8);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand span.subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: block;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--accent-emerald);
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    main {
+      max-width: 1280px;
+      width: 100%;
+      margin: 32px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 28px;
+      flex: 1;
+    }
+
+    @media (max-width: 960px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.25s, transform 0.25s;
+    }
+
+    .card:hover {
+      border-color: var(--card-hover-border);
+    }
+
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ── Form Inputs ── */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrapper input[type="number"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .range-row input[type="range"] {
+      flex: 1;
+      height: 6px;
+      accent-color: var(--primary);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .range-val {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    .btn-predict {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-predict:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.55);
+    }
+
+    .btn-predict:active {
+      transform: translateY(0);
+    }
+
+    .btn-predict:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Prediction Result Box ── */
+    .result-box {
+      margin-top: 22px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(56, 189, 248, 0.15));
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-box.visible { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .result-price {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 4px 0;
+    }
+
+    .result-range {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .result-range span {
+      font-weight: 700;
+      color: var(--accent-emerald);
+    }
+
+    .error-box {
+      margin-top: 16px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fecdd3;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .error-box.visible { display: block; }
+
+    /* ── Metrics Grid ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .metric-chip {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .metric-chip .mval {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    .metric-chip .mlbl {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* ── Right Panel Tabs ── */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .tab-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+    .chart-wrap {
+      position: relative;
+      height: 340px;
+      width: 100%;
+    }
+
+    /* ── Table Styling ── */
+    .table-container {
+      overflow-x: auto;
+      max-height: 340px;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .search-box:focus { border-color: var(--primary); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+
+    thead th {
+      background: rgba(15, 23, 42, 0.95);
+      color: #cbd5e1;
+      padding: 10px 16px;
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover {
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    tbody td {
+      padding: 8px 16px;
+      color: #e2e8f0;
+    }
+
+    /* ── EDA Image Grid ── */
+    .eda-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .eda-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .eda-card h3 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .eda-card img {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--card-border);
+      margin-top: 24px;
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">🏡</div>
+    <div>
+      <h1>House Price Predictor</h1>
+      <span class="subtitle">scikit-learn · Python Flask · Automated ML Benchmark</span>
+    </div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    <span id="model-status-text">Model Active: Ridge Regression</span>
+  </div>
+</header>
+
+<main>
+  <!-- ── Left Column: Predictor & Model Info ── -->
+  <div style="display:flex; flex-direction:column; gap:24px;">
+    <div class="card">
+      <h2>Instant Valuation</h2>
+
+      <div class="form-group">
+        <label for="area">
+          <span>Area (sq ft)</span>
+          <span style="color:var(--accent-cyan); font-weight:700;" id="area-val-label">1,800</span>
+        </label>
+        <div class="input-wrapper">
+          <input type="number" id="area" min="200" max="8000" step="50" value="1800" placeholder="e.g. 1800" oninput="updateAreaLabel(this.value)" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="rooms">
+          <span>Number of Rooms</span>
+          <span style="color:var(--accent-cyan); font-weight:700;" id="rooms-display">3</span>
+        </label>
+        <div class="range-row">
+          <input type="range" id="rooms-range" min="1" max="6" value="3" oninput="syncRooms(this.value)" />
+        </div>
+        <input type="number" id="rooms" min="1" max="10" value="3" style="display:none;" />
+      </div>
+
+      <button class="btn-predict" id="predict-btn" onclick="predict()">
+        <span>Calculate Price Estimate</span>
+      </button>
+
+      <div class="result-box" id="result-box">
+        <div class="result-label">Estimated Valuation</div>
+        <div class="result-price" id="result-price">—</div>
+        <div class="result-range" id="result-range"></div>
+      </div>
+
+      <div class="error-box" id="error-box"></div>
+    </div>
+
+    <!-- Model Metrics Chip Grid -->
+    <div class="card" id="metrics-card">
+      <h2>Best Model Performance</h2>
+      <div class="metrics-grid" id="metrics-strip">
+        <div class="metric-chip"><div class="mval">—</div><div class="mlbl">MAE</div></div>
+        <div class="metric-chip"><div class="mval">—</div><div class="mlbl">RMSE</div></div>
+        <div class="metric-chip"><div class="mval">—</div><div class="mlbl">R² Test</div></div>
+        <div class="metric-chip"><div class="mval">—</div><div class="mlbl">CV R²</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right Column: Interactive Charts & Data Explorer ── -->
+  <div class="right-panel">
+    <div class="card">
+      <h2>
+        <span>Data Explorer & Model Insights</span>
+      </h2>
+
+      <div class="tab-header">
+        <button class="tab-btn active" onclick="switchTab('scatter', event)">Area vs Price</button>
+        <button class="tab-btn" onclick="switchTab('comparison', event)">Model Comparison</button>
+        <button class="tab-btn" onclick="switchTab('bar', event)">Avg by Rooms</button>
+        <button class="tab-btn" onclick="switchTab('table', event)">Dataset View</button>
+        <button class="tab-btn" onclick="switchTab('eda', event)">Static Plots</button>
+      </div>
+
+      <!-- Tab 1: Scatter Chart -->
+      <div id="tab-scatter" class="tab-panel active">
+        <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
+      </div>
+
+      <!-- Tab 2: Model Comparison Chart -->
+      <div id="tab-comparison" class="tab-panel">
+        <div class="chart-wrap"><canvas id="comparisonChart"></canvas></div>
+      </div>
+
+      <!-- Tab 3: Avg Price Bar Chart -->
+      <div id="tab-bar" class="tab-panel">
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+
+      <!-- Tab 4: Tabular Dataset View -->
+      <div id="tab-table" class="tab-panel">
+        <input type="text" class="search-box" id="table-search" placeholder="Search dataset (e.g. 1800 or 3 rooms)..." onkeyup="filterTable()" />
+        <div class="table-container">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Area (sq ft)</th>
+                <th>Rooms</th>
+                <th>Price ($)</th>
+              </tr>
+            </thead>
+            <tbody id="data-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 5: Static EDA PNG Plots -->
+      <div id="tab-eda" class="tab-panel">
+        <div class="eda-grid">
+          <div class="eda-card">
+            <h3>Area vs Price Scatter</h3>
+            <img src="/static/area_vs_price.png" alt="Area vs Price" />
+          </div>
+          <div class="eda-card">
+            <h3>Price by Rooms</h3>
+            <img src="/static/rooms_vs_price.png" alt="Rooms vs Price" />
+          </div>
+          <div class="eda-card">
+            <h3>Correlation Matrix</h3>
+            <img src="/static/correlation.png" alt="Correlation Heatmap" />
+          </div>
+          <div class="eda-card">
+            <h3>Residuals & Fit</h3>
+            <img src="/static/model_performance.png" alt="Actual vs Predicted" />
+          </div>
+          <div class="eda-card">
+            <h3>Benchmark CV Scores</h3>
+            <img src="/static/model_comparison.png" alt="Model Comparison" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  House Price Predictor &bull; Powered by Python 3.12, scikit-learn, Flask &amp; Chart.js
+</footer>
+
+<script>
+  // ── Sync form values & range slider ─────────────────────────────────────────
+  function updateAreaLabel(val) {
+    const num = parseFloat(val) || 0;
+    document.getElementById("area-val-label").textContent = num.toLocaleString("en-US");
+  }
+
+  function syncRooms(v) {
+    document.getElementById("rooms").value = v;
+    document.getElementById("rooms-display").textContent = v;
+  }
+
+  // ── Tab Switcher ────────────────────────────────────────────────────────────
+  function switchTab(tabId, ev) {
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("tab-" + tabId).classList.add("active");
+    if (ev && ev.target) {
+      ev.target.classList.add("active");
+    }
+  }
+
+  // ── Predict API Call ────────────────────────────────────────────────────────
+  async function predict() {
+    const area = parseFloat(document.getElementById("area").value);
+    const rooms = parseInt(document.getElementById("rooms").value);
+    const btn = document.getElementById("predict-btn");
+    const resultBox = document.getElementById("result-box");
+    const errorBox = document.getElementById("error-box");
+
+    resultBox.classList.remove("visible");
+    errorBox.classList.remove("visible");
+
+    if (!area || area <= 0 || !rooms || rooms <= 0) {
+      showError("Please enter valid area (> 0) and rooms (> 0).");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Calculating...</span>';
+
+    try {
+      const res = await fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ area, rooms }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showError(data.error || "Prediction failed."); return; }
+
+      document.getElementById("result-price").textContent = data.formatted;
+      document.getElementById("result-range").innerHTML =
+        `Confidence Range: <span>$${Math.round(data.price_range.low).toLocaleString()}</span> — <span>$${Math.round(data.price_range.high).toLocaleString()}</span>`;
+      resultBox.classList.add("visible");
+
+      addPredictionPoint(area, data.predicted_price);
+    } catch (e) {
+      showError("Could not connect to Flask backend server.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "<span>Calculate Price Estimate</span>";
+    }
+  }
+
+  function showError(msg) {
+    const eb = document.getElementById("error-box");
+    eb.textContent = msg;
+    eb.classList.add("visible");
+  }
+
+  // ── Load Metrics ────────────────────────────────────────────────────────────
+  async function loadMetrics() {
+    try {
+      const res = await fetch("/api/metrics");
+      const m = await res.json();
+      
+      if (m.model_name) {
+        document.getElementById("model-status-text").textContent = `Best Model: ${m.model_name}`;
+      }
+
+      const strip = document.getElementById("metrics-strip");
+      strip.innerHTML = `
+        <div class="metric-chip"><div class="mval">$${Number(m.mae).toLocaleString()}</div><div class="mlbl">MAE</div></div>
+        <div class="metric-chip"><div class="mval">$${Number(m.rmse).toLocaleString()}</div><div class="mlbl">RMSE</div></div>
+        <div class="metric-chip"><div class="mval">${(m.r2 * 100).toFixed(1)}%</div><div class="mlbl">Test R²</div></div>
+        <div class="metric-chip"><div class="mval">${(m.cv_r2_mean * 100).toFixed(1)}%</div><div class="mlbl">CV R² (5-Fold)</div></div>
+      `;
+
+      if (m.model_comparison) {
+        buildComparisonChart(m.model_comparison, m.model_name);
+      }
+    } catch (_) {}
+  }
+
+  // ── Load Dataset & Build Charts ────────────────────────────────────────────
+  let scatterChart, barChart, comparisonChart;
+  let rawData = { area: [], rooms: [], price: [] };
+
+  async function loadData() {
+    try {
+      const res = await fetch("/api/data");
+      rawData = await res.json();
+
+      // Populate table
+      populateTable(rawData);
+
+      // Chart 1: Scatter area vs price
+      const scatterPoints = rawData.area.map((a, i) => ({ x: a, y: rawData.price[i] / 1000 }));
+      scatterChart = new Chart(document.getElementById("scatterChart"), {
+        type: "scatter",
+        data: {
+          datasets: [
+            {
+              label: "Historical Houses",
+              data: scatterPoints,
+              backgroundColor: "rgba(56, 189, 248, 0.75)",
+              borderColor: "#38bdf8",
+              pointRadius: 6,
+              pointHoverRadius: 8,
+            },
+            {
+              label: "Your Valuation Target",
+              data: [],
+              backgroundColor: "#f43f5e",
+              borderColor: "#ffffff",
+              borderWidth: 2,
+              pointRadius: 10,
+              pointStyle: "rectRot",
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#cbd5e1", font: { family: "Plus Jakarta Sans" } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `Area: ${ctx.parsed.x} sq ft | Price: $${(ctx.parsed.y * 1000).toLocaleString()}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(255,255,255,0.06)" },
+              ticks: { color: "#94a3b8" },
+              title: { display: true, text: "Area (sq ft)", color: "#cbd5e1" }
+            },
+            y: {
+              grid: { color: "rgba(255,255,255,0.06)" },
+              ticks: { color: "#94a3b8" },
+              title: { display: true, text: "Price ($k)", color: "#cbd5e1" }
+            }
+          }
+        }
+      });
+
+      // Chart 2: Avg Price by Rooms
+      const roomMap = {};
+      rawData.rooms.forEach((r, i) => {
+        if (!roomMap[r]) roomMap[r] = [];
+        roomMap[r].push(rawData.price[i]);
+      });
+      const sortedRooms = Object.keys(roomMap).map(Number).sort((a,b)=>a-b);
+      const avgPrices = sortedRooms.map(r => {
+        const arr = roomMap[r];
+        return Math.round(arr.reduce((s,v)=>s+v,0) / arr.length / 1000);
+      });
+
+      barChart = new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+          labels: sortedRooms.map(r => `${r} Rooms`),
+          datasets: [{
+            label: "Avg Price ($k)",
+            data: avgPrices,
+            backgroundColor: sortedRooms.map((_, i) => `hsl(${220 + i*20}, 80%, ${65 - i*5}%)`),
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
+            y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#94a3b8" }, title: { display: true, text: "Avg Price ($k)", color: "#cbd5e1" } }
+          }
+        }
+      });
+
+    } catch (e) {
+      console.error("Failed to load dataset:", e);
+    }
+  }
+
+  function buildComparisonChart(compData, bestName) {
+    const labels = Object.keys(compData);
+    const cvScores = labels.map(k => compData[k].cv_r2_mean * 100);
+    const bgColors = labels.map(k => k === bestName ? "#34d399" : "#6366f1");
+
+    comparisonChart = new Chart(document.getElementById("comparisonChart"), {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "5-Fold CV R² Score (%)",
+          data: cvScores,
+          backgroundColor: bgColors,
+          borderRadius: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `CV R²: ${ctx.parsed.y.toFixed(1)}%`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
+          y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#94a3b8" }, title: { display: true, text: "CV R² Score (%)", color: "#cbd5e1" }, min: 0, max: 100 }
+        }
+      }
+    });
+  }
+
+  function addPredictionPoint(area, price) {
+    if (!scatterChart) return;
+    scatterChart.data.datasets[1].data = [{ x: area, y: price / 1000 }];
+    scatterChart.update();
+  }
+
+  function populateTable(data) {
+    const tbody = document.getElementById("data-tbody");
+    tbody.innerHTML = "";
+    data.area.forEach((a, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${i+1}</td><td>${a.toLocaleString()}</td><td>${data.rooms[i]}</td><td>$${data.price[i].toLocaleString()}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function filterTable() {
+    const query = document.getElementById("table-search").value.toLowerCase();
+    const rows = document.querySelectorAll("#data-tbody tr");
+    rows.forEach(tr => {
+      const text = tr.innerText.toLowerCase();
+      tr.style.display = text.includes(query) ? "" : "none";
+    });
+  }
+
+  // Initial loads
+  loadMetrics();
+  loadData();
+</script>
+</body>
+</html>

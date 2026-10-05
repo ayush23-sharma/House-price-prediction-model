@@ -1,0 +1,44 @@
+{
+  "model_name": "Ridge Regression",
+  "mae": 70813.72,
+  "rmse": 92465.19,
+  "r2": 0.5183,
+  "cv_r2_mean": 0.3967,
+  "cv_r2_std": 0.4583,
+  "train_size": 37,
+  "test_size": 10,
+  "features": [
+    "area",
+    "rooms"
+  ],
+  "model_comparison": {
+    "Linear Regression": {
+      "mae": 72334.75,
+      "rmse": 92792.37,
+      "r2": 0.5149,
+      "cv_r2_mean": 0.3639,
+      "cv_r2_std": 0.5073
+    },
+    "Ridge Regression": {
+      "mae": 70813.72,
+      "rmse": 92465.19,
+      "r2": 0.5183,
+      "cv_r2_mean": 0.3967,
+      "cv_r2_std": 0.4583
+    },
+    "Random Forest": {
+      "mae": 72252.42,
+      "rmse": 92115.81,
+      "r2": 0.5219,
+      "cv_r2_mean": -0.2288,
+      "cv_r2_std": 1.317
+    },
+    "Gradient Boosting": {
+      "mae": 72592.99,
+      "rmse": 94610.65,
+      "r2": 0.4957,
+      "cv_r2_mean": -0.7678,
+      "cv_r2_std": 1.8269
+    }
+  }
+}
